@@ -1,51 +1,66 @@
 // Create a web server
-// Start the web server
+// 1. Create a new express server
+// 2. Create a few routes
+//    1. GET /comments - return all comments
+//    2. POST /comments - create a new comment
+//    3. GET /comments/:id - return a single comment
+//    4. PATCH /comments/:id - update a comment
+//    5. DELETE /comments/:id - delete a comment
+// 3. Start the server and test your work!
 
-// Load the express module
-const express = require('express');
+const express = require("express");
 const app = express();
 const port = 3000;
-const comments = require('./data/comments');
+const comments = require("./comments");
+const { v4: uuidv4 } = require("uuid");
 
-// Set view engine to ejs
-app.set('view engine', 'ejs');
+app.use(express.json());
 
-// Set static folder
-app.use(express.static('public'));
-
-// Home route
-app.get('/', (req, res) => {
-  res.render('home', {
-    title: 'Home',
-    comments: comments.comments,
-  });
+app.get("/comments", (req, res) => {
+  res.send(comments);
 });
 
-// About route
-app.get('/about', (req, res) => {
-  res.render('about', {
-    title: 'About',
-  });
+app.post("/comments", (req, res) => {
+  const comment = {
+    id: uuidv4(),
+    ...req.body,
+  };
+  comments.push(comment);
+  res.send(comment);
 });
 
-// Comments route
-app.get('/comments', (req, res) => {
-  res.render('comments', {
-    title: 'Comments',
-    comments: comments.comments,
-  });
+app.get("/comments/:id", (req, res) => {
+  const comment = comments.find((comment) => comment.id === req.params.id);
+  if (comment) {
+    res.send(comment);
+  } else {
+    res.status(404).send();
+  }
 });
 
-// Comment route
-app.get('/comments/:id', (req, res) => {
-  const id = req.params.id;
-  res.render('comment', {
-    title: 'Comment',
-    comment: comments.comments[id],
-  });
+app.patch("/comments/:id", (req, res) => {
+  const comment = comments.find((comment) => comment.id === req.params.id);
+  if (comment) {
+    comment.name = req.body.name;
+    comment.comment = req.body.comment;
+    res.send(comment);
+  } else {
+    res.status(404).send();
+  }
 });
 
-// Start the server
+app.delete("/comments/:id", (req, res) => {
+  const commentIndex = comments.findIndex(
+    (comment) => comment.id === req.params.id
+  );
+  if (commentIndex === -1) {
+    res.status(404).send();
+  } else {
+    comments.splice(commentIndex, 1);
+    res.send(comments);
+  }
+});
+
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  console.log("Server is up on port " + port);
 });
